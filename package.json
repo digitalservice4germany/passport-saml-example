@@ -12,6 +12,10 @@
     "passport-saml": "^3.2.1"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "postinstall": "patch-package"
+  },
+  "devDependencies": {
+    "patch-package": "^6.4.7"
   }
 }

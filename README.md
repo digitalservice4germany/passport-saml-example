@@ -55,7 +55,7 @@ The Service Provider must be configured via the [Self Service Portal](https://se
 ## Usage
 
 ```
-npm install
+npm i
 npm start
 ```
 

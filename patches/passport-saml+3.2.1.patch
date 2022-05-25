@@ -1,0 +1,46 @@
+diff --git a/node_modules/passport-saml/lib/node-saml/algorithms.js b/node_modules/passport-saml/lib/node-saml/algorithms.js
+index 5c1524f..b6c524c 100644
+--- a/node_modules/passport-saml/lib/node-saml/algorithms.js
++++ b/node_modules/passport-saml/lib/node-saml/algorithms.js
+@@ -5,7 +5,7 @@ const crypto = require("crypto");
+ function getSigningAlgorithm(shortName) {
+     switch (shortName) {
+         case "sha256":
+-            return "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
++            return "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1";
+         case "sha512":
+             return "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512";
+         case "sha1":
+diff --git a/node_modules/passport-saml/lib/node-saml/saml.js b/node_modules/passport-saml/lib/node-saml/saml.js
+index 1313802..40c5c70 100644
+--- a/node_modules/passport-saml/lib/node-saml/saml.js
++++ b/node_modules/passport-saml/lib/node-saml/saml.js
+@@ -206,7 +206,6 @@ class SAML {
+         }
+         if (this.options.identifierFormat != null) {
+             request["samlp:AuthnRequest"]["samlp:NameIDPolicy"] = {
+-                "@xmlns:samlp": "urn:oasis:names:tc:SAML:2.0:protocol",
+                 "@Format": this.options.identifierFormat,
+                 "@AllowCreate": "true",
+             };
+diff --git a/node_modules/passport-saml/lib/node-saml/xml.js b/node_modules/passport-saml/lib/node-saml/xml.js
+index 901bc50..3f2be99 100644
+--- a/node_modules/passport-saml/lib/node-saml/xml.js
++++ b/node_modules/passport-saml/lib/node-saml/xml.js
+@@ -104,8 +104,16 @@ const signXml = (xml, xpath, location, options) => {
+     }
+     sig.addReference(xpath, transforms, algorithms.getDigestAlgorithm(options.digestAlgorithm));
+     sig.signingKey = options.privateKey;
++
++    sig.keyInfoProvider = {
++        file: "",
++        getKeyInfo: () => "<ds:X509Data><ds:X509Certificate>" + Buffer.from(options.signingCert) + "</ds:X509Certificate></ds:X509Data>",
++        getKey: () => Buffer.from(options.signingCert),
++    };
++
+     sig.computeSignature(xml, {
+         location,
++        prefix: "ds"
+     });
+     return sig.getSignedXml();
+ };
