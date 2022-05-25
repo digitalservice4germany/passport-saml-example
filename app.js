@@ -25,17 +25,24 @@ var samlStrategy = new saml.Strategy({
   entryPoint: process.env.ENTRY_POINT,
   // Usually specified as `/shibboleth` from site root
   issuer: process.env.ISSUER,
-  identifierFormat: null,
-  // Service Provider private key
-  decryptionPvk: fs.readFileSync(__dirname + '/cert/key.pem', 'utf8'),
-  // Service Provider Certificate
-  privateCert: fs.readFileSync(__dirname + '/cert/key.pem', 'utf8'),
-  // Identity Provider's public key
+  identifierFormat: 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
+  // Service Provider private key for decryption of encrypted assertions
+  decryptionPvk: fs.readFileSync(__dirname + '/cert/sp_key.pem', 'utf8'),
+  // Service Provider private key for signing requests
+  privateKey: fs.readFileSync(__dirname + '/cert/sp_key.pem', 'utf8'),
+  // Service Provider public key to be included in AuthnRequest
+  signingCert: fs.readFileSync(__dirname + '/cert/sp_cert.pem', 'utf8'),
+  // Identity Provider public key for signature validation
   cert: fs.readFileSync(__dirname + '/cert/idp_cert.pem', 'utf8'),
   validateInResponseTo: false,
-  disableRequestedAuthnContext: true
+  disableRequestedAuthnContext: true,
+  authnRequestBinding: 'HTTP-POST',
+  forceAuthn: true,
+  signatureAlgorithm: 'sha256',
+  digestAlgorithm: 'sha256',
+  skipRequestCompression: true
 }, function(profile, done) {
-  return done(null, profile); 
+  return done(null, profile);
 });
 
 passport.use(samlStrategy);
@@ -85,7 +92,7 @@ app.get('/login/fail',
 app.get('/Shibboleth.sso/Metadata', 
   function(req, res) {
     res.type('application/xml');
-    res.status(200).send(samlStrategy.generateServiceProviderMetadata(fs.readFileSync(__dirname + '/cert/cert.pem', 'utf8')));
+    res.status(200).send(samlStrategy.generateServiceProviderMetadata(fs.readFileSync(__dirname + '/cert/sp_cert.pem', 'utf8')));
   }
 );
 
