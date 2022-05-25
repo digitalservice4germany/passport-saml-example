@@ -89,13 +89,6 @@ app.get('/login/fail',
   }
 );
 
-app.get('/Shibboleth.sso/Metadata', 
-  function(req, res) {
-    res.type('application/xml');
-    res.status(200).send(samlStrategy.generateServiceProviderMetadata(fs.readFileSync(__dirname + '/cert/sp_cert.pem', 'utf8')));
-  }
-);
-
 //general error handler
 app.use(function(err, req, res, next) {
   console.log("Fatal error: " + JSON.stringify(err));
