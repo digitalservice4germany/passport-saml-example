@@ -7,6 +7,8 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var passport = require('passport');
 var saml = require('passport-saml');
+var xml_1 = require("passport-saml/lib/node-saml/xml");
+var base64url = require('base64url');
 
 dotenv.load();
 
@@ -65,7 +67,9 @@ function ensureAuthenticated(req, res, next) {
 app.get('/',
   ensureAuthenticated, 
   function(req, res) {
-    res.send('Authenticated');
+    let response = buildResponse(req.query.samlResponse);
+    res.setHeader("Content-Type", "text/html")
+    res.send(response);
   }
 );
 
@@ -78,8 +82,14 @@ app.get('/login',
 
 app.post('/login/callback',
    passport.authenticate('saml', { failureRedirect: '/login/fail' }),
-  function(req, res) {
-    res.redirect('/');
+  async function(req, res) {
+    let samlResponse = req.body.SAMLResponse;
+    if (samlResponse) {
+      let result = await extractData(samlResponse);
+      res.redirect('/?samlResponse=' + base64url(JSON.stringify(result)));
+    } else {
+      res.redirect('/');
+    }
   }
 );
 
@@ -99,3 +109,47 @@ var server = app.listen(4006, function () {
   console.log('Listening on port %d', server.address().port)
 });
 
+async function extractData(samlResponse) {
+  let result = [];
+  const xmlResponse = Buffer.from(samlResponse, "base64").toString("utf8");
+  const responseDoc = (0, xml_1.parseDomFromString)(xmlResponse);
+  const encryptedAssertions = xml_1.xpath.selectElements(responseDoc, "/*[local-name()='Response']/*[local-name()='EncryptedAssertion']");
+  const encryptedAssertionXml = encryptedAssertions[0].toString();
+  const decryptedXml = await (0, xml_1.decryptXml)(encryptedAssertionXml, fs.readFileSync(__dirname + '/cert/sp_key.pem', 'utf8'));
+  const decryptedDoc = (0, xml_1.parseDomFromString)(decryptedXml);
+
+  const attributes = xml_1.xpath.selectElements(decryptedDoc, "/*[local-name()='Assertion']/*[local-name()='AttributeStatement']/*[local-name()='Attribute']");
+  attributes.forEach(attribute => {
+    let name = attribute.getAttribute("Name");
+    let valueNode = attribute.childNodes[0];
+    let valueChildNodes = valueNode.childNodes;
+    let value = "";
+
+    if (valueChildNodes.length === 1) {
+      value = valueChildNodes[0].nodeValue;
+    } else {
+      for (let i = 0; i < valueChildNodes.length; i++) {
+        let localName = valueChildNodes[i].localName;
+        let localValue = valueChildNodes[i].childNodes[0].nodeValue;
+        value += valueChildNodes[i].childNodes[0].nodeValue + " ";
+        result.push({name: localName, value: localValue});
+      }
+    }
+    result.push({name: name, value: value});
+  })
+  return result;
+}
+
+function buildResponse(samlResponse) {
+  let html = '<div style="font-family: \'Open Sans\', sans-serif;"><h1 style="padding: 0.5rem 1rem;">Authenticated</h1>';
+  if (samlResponse) {
+    html += '<br><table><thead style="font-weight: bold;"><tr><td style="padding: 0.5em 1em;">Attribute</td><td style="padding: 0.5em 1em;">Value</td></tr></thead><tbody>';
+    let data = JSON.parse(base64url.decode(samlResponse));
+    data.forEach(attr => {
+      html += '<tr><td style="padding: 0.5em 1em;">' + attr.name + '</td><td style="padding: 0.5em 1em;">' + attr.value + '</td></tr>'
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+  return html;
+}
