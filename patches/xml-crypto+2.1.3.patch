@@ -1,22 +1,12 @@
 diff --git a/node_modules/xml-crypto/lib/signed-xml.js b/node_modules/xml-crypto/lib/signed-xml.js
-index 7b23694..8dee38f 100644
+index 7b23694..a24e4fd 100644
 --- a/node_modules/xml-crypto/lib/signed-xml.js
 +++ b/node_modules/xml-crypto/lib/signed-xml.js
-@@ -119,31 +119,40 @@ function RSASHA1() {
- function RSASHA256() {
- 
-   /**
--  * Sign the given string using the given key
--  *
--  */
-+   * Sign the given string using the given key
-+   *
-+   */
+@@ -125,7 +125,11 @@ function RSASHA256() {
    this.getSignature = function(signedInfo, signingKey, callback) {
      var signer = crypto.createSign("RSA-SHA256")
      signer.update(signedInfo)
 -    var res = signer.sign(signingKey, 'base64')
-+    // added by me
 +    var res = signer.sign({
 +      key: signingKey,
 +      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
@@ -25,14 +15,7 @@ index 7b23694..8dee38f 100644
      if (callback) callback(null, res)
      return res
    }
- 
-   /**
--  * Verify the given signature of the given string using key
--  *
--  */
-+   * Verify the given signature of the given string using key
-+   *
-+   */
+@@ -137,13 +141,17 @@ function RSASHA256() {
    this.verifySignature = function(str, key, signatureValue, callback) {
      var verifier = crypto.createVerify("RSA-SHA256")
      verifier.update(str)
@@ -52,7 +35,7 @@ index 7b23694..8dee38f 100644
    }
  
  }
-@@ -329,7 +338,7 @@ SignedXml.HashAlgorithms = {
+@@ -329,7 +337,7 @@ SignedXml.HashAlgorithms = {
  
  SignedXml.SignatureAlgorithms = {
    'http://www.w3.org/2000/09/xmldsig#rsa-sha1': RSASHA1,
