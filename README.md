@@ -49,7 +49,7 @@ The Service Provider must be configured via the [Self Service Portal](https://se
 - **Portal-Logo**: upload any logo
 - **Signaturzertifikat**: enter the Service Provider public key which you generated
 - **Verschlüsselungszertifikat**: enter the Service Provider public key which you generated
-- **Assertion Consumer Service URLs**: enter the callback URL where EKONA sends the requests to (must be the `CALLBACK_URL` from your `.env`)
+- **Assertion Consumer Service URLs**: enter the callback URL where EKONA sends the response to (must be the `CALLBACK_URL` from your `.env`)
 - **Manage Name ID URLs**: optional - leave empty
 
 ## Usage
